@@ -7,7 +7,7 @@ RUN npm install
 
 COPY . .
 
-RUN npm run build
+RUN node ./node_modules/typescript/bin/tsc
 
 ENV PORT=8080
 
