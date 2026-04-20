@@ -1,12 +1,14 @@
 import express from "express";
 import cors from "cors";
 import upbitRouter from "./routes/upbit";
+import exchangeUpbitRouter from "./routes/exchangeUpbit";
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 app.use("/upbit", upbitRouter);
+app.use("/api/exchange/upbit", exchangeUpbitRouter);
 
 app.get("/", (_req, res) => {
   res.send("Cloud Run TS Server OK");
