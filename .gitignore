@@ -1,0 +1,8 @@
+node_modules/
+dist/
+
+# Build artifacts that should never live under src
+src/**/*.js
+src/**/*.js.map
+src/**/*.d.ts
+src/**/*.d.ts.map

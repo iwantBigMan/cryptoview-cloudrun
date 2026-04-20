@@ -97,9 +97,14 @@ Cloud Run에서 외부로 나가는 IP 확인용 엔드포인트입니다.
 ```json
 {
   "accessKey": "string",
-  "secretKey": "string",
-  "userId": "string"
+  "secretKey": "string"
 }
+```
+
+헤더:
+
+```text
+Authorization: Bearer <Firebase ID Token>
 ```
 
 성공 응답:
@@ -117,7 +122,7 @@ Cloud Run에서 외부로 나가는 IP 확인용 엔드포인트입니다.
 ```json
 {
   "valid": false,
-  "message": "accessKey, secretKey, and userId are required."
+  "message": "accessKey and secretKey are required."
 }
 ```
 
@@ -239,16 +244,18 @@ curl -X POST "http://localhost:8080/upbit/validate" \
 
 ```bash
 curl -X POST "http://localhost:8080/api/exchange/upbit/validate-and-save" \
+  -H "Authorization: Bearer YOUR_FIREBASE_ID_TOKEN" \
   -H "Content-Type: application/json" \
-  -d "{\"accessKey\":\"YOUR_ACCESS_KEY\",\"secretKey\":\"YOUR_SECRET_KEY\",\"userId\":\"test-user-123\"}"
+  -d "{\"accessKey\":\"YOUR_ACCESS_KEY\",\"secretKey\":\"YOUR_SECRET_KEY\"}"
 ```
 
 Cloud Run 호출 예시:
 
 ```bash
 curl -X POST "https://cryptoview-api-620339426938.us-central1.run.app/api/exchange/upbit/validate-and-save" \
+  -H "Authorization: Bearer YOUR_FIREBASE_ID_TOKEN" \
   -H "Content-Type: application/json" \
-  -d "{\"accessKey\":\"YOUR_ACCESS_KEY\",\"secretKey\":\"YOUR_SECRET_KEY\",\"userId\":\"test-user-123\"}"
+  -d "{\"accessKey\":\"YOUR_ACCESS_KEY\",\"secretKey\":\"YOUR_SECRET_KEY\"}"
 ```
 
 ## 구현 메모

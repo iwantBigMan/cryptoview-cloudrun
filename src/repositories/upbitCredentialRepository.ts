@@ -1,7 +1,9 @@
 import { FieldValue, Firestore } from "@google-cloud/firestore";
 import type { UpbitCredentialDocument } from "../types/upbit";
 
-const firestore = new Firestore();
+const firestore = new Firestore({
+  databaseId: process.env.FIRESTORE_DATABASE_ID ?? "cryptoview",
+});
 
 export async function saveUpbitCredential(
   userId: string,

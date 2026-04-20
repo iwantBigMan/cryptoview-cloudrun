@@ -3,9 +3,7 @@ export interface UpbitValidateRequest {
   secretKey: string;
 }
 
-export interface UpbitValidateAndSaveRequest extends UpbitValidateRequest {
-  userId: string;
-}
+export interface UpbitValidateAndSaveRequest extends UpbitValidateRequest {}
 
 export interface UpbitValidateResponse {
   valid: boolean;

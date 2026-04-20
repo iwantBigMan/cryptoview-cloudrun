@@ -7,16 +7,24 @@ import type {
 
 export async function validateAndSaveUpbitCredentialController(
   req: Request<unknown, unknown, Partial<UpbitValidateAndSaveRequest>>,
-  res: Response<UpbitValidateAndSaveResponse>,
+  res: Response<UpbitValidateAndSaveResponse, { authUserId?: string }>,
 ): Promise<void> {
   const accessKey = req.body.accessKey?.trim();
   const secretKey = req.body.secretKey?.trim();
-  const userId = req.body.userId?.trim();
+  const userId = res.locals.authUserId;
 
-  if (!accessKey || !secretKey || !userId) {
+  if (!accessKey || !secretKey) {
     res.status(400).json({
       valid: false,
-      message: "accessKey, secretKey, and userId are required.",
+      message: "accessKey and secretKey are required.",
+    });
+    return;
+  }
+
+  if (!userId) {
+    res.status(401).json({
+      valid: false,
+      message: "Unauthorized request.",
     });
     return;
   }
