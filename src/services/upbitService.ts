@@ -61,7 +61,8 @@ export async function validateUpbitKey(
       message: getFailureMessage(response.status, errorBody),
       statusCode: response.status,
     };
-  } catch {
+  } catch (error) {
+    console.error("Upbit API request failed:", error);
     return {
       valid: false,
       message: "Failed to reach Upbit API.",

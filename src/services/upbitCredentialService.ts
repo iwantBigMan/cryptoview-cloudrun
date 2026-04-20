@@ -14,29 +14,17 @@ export async function validateAndSaveUpbitCredential(
     return validationResult;
   }
 
-  let accessKeyEncrypted = "";
-  let secretKeyEncrypted = "";
-  let mutableAccessKey = accessKey;
-  let mutableSecretKey = secretKey;
+  const [accessKeyEncrypted, secretKeyEncrypted] = await Promise.all([
+    encryptText(accessKey),
+    encryptText(secretKey),
+  ]);
 
-  try {
-    [accessKeyEncrypted, secretKeyEncrypted] = await Promise.all([
-      encryptText(mutableAccessKey),
-      encryptText(mutableSecretKey),
-    ]);
+  await saveUpbitCredential(userId, accessKeyEncrypted, secretKeyEncrypted);
 
-    await saveUpbitCredential(userId, accessKeyEncrypted, secretKeyEncrypted);
-
-    return {
-      valid: true,
-      message: "Upbit API key is valid and saved securely.",
-      statusCode: 200,
-      saved: true,
-    };
-  } finally {
-    mutableAccessKey = "";
-    mutableSecretKey = "";
-    accessKeyEncrypted = "";
-    secretKeyEncrypted = "";
-  }
+  return {
+    valid: true,
+    message: "Upbit API key is valid and saved securely.",
+    statusCode: 200,
+    saved: true,
+  };
 }

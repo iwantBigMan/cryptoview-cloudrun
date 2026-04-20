@@ -41,7 +41,8 @@ export async function validateAndSaveUpbitCredentialController(
       message: result.message,
       saved: result.saved,
     });
-  } catch {
+  } catch (error) {
+    console.error("validate-and-save failed:", error);
     res.status(500).json({
       valid: false,
       message: "Internal server error.",
