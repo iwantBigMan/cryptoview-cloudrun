@@ -2,8 +2,20 @@ import type { RequestHandler } from "express";
 import { getApps, initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 
+function getFirebaseProjectId(): string {
+  const projectId = process.env.FIREBASE_PROJECT_ID;
+
+  if (!projectId) {
+    throw new Error("FIREBASE_PROJECT_ID is not configured.");
+  }
+
+  return projectId;
+}
+
 if (!getApps().length) {
-  initializeApp();
+  initializeApp({
+    projectId: getFirebaseProjectId(),
+  });
 }
 
 type AuthLocals = { authUserId?: string };
