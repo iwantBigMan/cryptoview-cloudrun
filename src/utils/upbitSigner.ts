@@ -13,6 +13,6 @@ export function createUpbitJwt(accessKey: string, secretKey: string): string {
   };
 
   return jwt.sign(payload, secretKey, {
-    algorithm: "HS256",
+    algorithm: "HS512",
   });
 }
