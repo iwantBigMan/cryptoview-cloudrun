@@ -2,6 +2,7 @@ import { createUpbitJwt } from "../utils/upbitSigner";
 import type { UpbitValidationResult } from "../types/upbit";
 
 const UPBIT_ACCOUNTS_URL = "https://api.upbit.com/v1/accounts";
+const UPBIT_REQUEST_TIMEOUT_MS = 30000;
 
 interface UpbitErrorBody {
   error?: {
@@ -34,6 +35,7 @@ export async function validateUpbitKey(
   try {
     const response = await fetch(UPBIT_ACCOUNTS_URL, {
       method: "GET",
+      signal: AbortSignal.timeout(UPBIT_REQUEST_TIMEOUT_MS),
       headers: {
         Authorization: `Bearer ${token}`,
         Accept: "application/json",
