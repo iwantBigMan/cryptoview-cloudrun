@@ -30,3 +30,22 @@ export async function saveUpbitCredential(
     transaction.set(documentRef, document);
   });
 }
+
+export async function getUpbitCredential(
+  userId: string,
+): Promise<UpbitCredentialDocument | null> {
+  const documentRef = firestore.doc(`users/${userId}/exchangeCredentials/upbit`);
+  const snapshot = await documentRef.get();
+
+  if (!snapshot.exists) {
+    return null;
+  }
+
+  const data = snapshot.data();
+
+  if (!data) {
+    return null;
+  }
+
+  return data as UpbitCredentialDocument;
+}

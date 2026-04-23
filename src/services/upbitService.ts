@@ -1,5 +1,8 @@
 import { createUpbitJwt } from "../utils/upbitSigner";
-import type { UpbitValidationResult } from "../types/upbit";
+import type {
+  UpbitAccountBalanceDto,
+  UpbitValidationResult,
+} from "../types/upbit";
 
 const UPBIT_ACCOUNTS_URL = "https://api.upbit.com/v1/accounts";
 const UPBIT_REQUEST_TIMEOUT_MS = 30000;
@@ -10,6 +13,18 @@ interface UpbitErrorBody {
     message?: string;
   };
   message?: string;
+}
+
+function createUpbitAuthHeaders(
+  accessKey: string,
+  secretKey: string,
+): HeadersInit {
+  const token = createUpbitJwt(accessKey, secretKey);
+
+  return {
+    Authorization: `Bearer ${token}`,
+    Accept: "application/json",
+  };
 }
 
 function getFailureMessage(status: number, body: UpbitErrorBody): string {
@@ -30,16 +45,11 @@ export async function validateUpbitKey(
   accessKey: string,
   secretKey: string,
 ): Promise<UpbitValidationResult> {
-  const token = createUpbitJwt(accessKey, secretKey);
-
   try {
     const response = await fetch(UPBIT_ACCOUNTS_URL, {
       method: "GET",
       signal: AbortSignal.timeout(UPBIT_REQUEST_TIMEOUT_MS),
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: "application/json",
-      },
+      headers: createUpbitAuthHeaders(accessKey, secretKey),
     });
 
     if (response.status === 200) {
@@ -71,4 +81,29 @@ export async function validateUpbitKey(
       statusCode: 502,
     };
   }
+}
+
+export async function getUpbitAccounts(
+  accessKey: string,
+  secretKey: string,
+): Promise<UpbitAccountBalanceDto[]> {
+  const response = await fetch(UPBIT_ACCOUNTS_URL, {
+    method: "GET",
+    signal: AbortSignal.timeout(UPBIT_REQUEST_TIMEOUT_MS),
+    headers: createUpbitAuthHeaders(accessKey, secretKey),
+  });
+
+  if (!response.ok) {
+    let errorBody: UpbitErrorBody = {};
+
+    try {
+      errorBody = (await response.json()) as UpbitErrorBody;
+    } catch {
+      errorBody = {};
+    }
+
+    throw new Error(getFailureMessage(response.status, errorBody));
+  }
+
+  return (await response.json()) as UpbitAccountBalanceDto[];
 }

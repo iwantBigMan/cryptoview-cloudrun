@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { getUpbitAccountsController } from "../controllers/upbitAccountController";
 import { validateAndSaveUpbitCredentialController } from "../controllers/upbitCredentialController";
 import { requireFirebaseAuth } from "../middlewares/firebaseAuth";
 
@@ -10,10 +11,6 @@ router.post(
   validateAndSaveUpbitCredentialController,
 );
 
-router.get("/accounts", requireFirebaseAuth, (_req, res) => {
-  res.status(501).json({
-    message: "Upbit accounts API is not implemented yet.",
-  });
-});
+router.get("/accounts", requireFirebaseAuth, getUpbitAccountsController);
 
 export default router;
