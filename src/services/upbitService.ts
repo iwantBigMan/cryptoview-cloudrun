@@ -107,3 +107,14 @@ export async function getUpbitAccounts(
 
   return (await response.json()) as UpbitAccountBalanceDto[];
 }
+
+
+/*
+마켓 api
+interface UpbitMarketApi {
+    @GET("v1/ticker")
+    suspend fun getTickers(
+        @Query("markets") markets: String
+    ): List<UpbitMarketTickerDto>
+} - 안드로이드에서 사용하는 Upbit 마켓 API 
+*/

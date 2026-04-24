@@ -321,6 +321,25 @@ curl -X GET "https://cryptoview-api-620339426938.us-central1.run.app/api/exchang
   -H "Authorization: Bearer YOUR_FIREBASE_ID_TOKEN"
 ```
 
+## k6 테스트
+
+스크립트 위치:
+
+```text
+k6/upbit-validate-and-save.js
+k6/upbit-accounts.js
+```
+
+실행 예시:
+
+```bash
+k6 run .\k6\upbit-validate-and-save.js -e FIREBASE_ID_TOKEN=YOUR_FIREBASE_ID_TOKEN -e ACCESS_KEY=YOUR_ACCESS_KEY -e SECRET_KEY=YOUR_SECRET_KEY
+```
+
+```bash
+k6 run .\k6\upbit-accounts.js -e FIREBASE_ID_TOKEN=YOUR_FIREBASE_ID_TOKEN
+```
+
 ## 현재까지 확인된 이슈
 
 - 프로젝트 ID가 `crytoview` / `cryptoview`로 혼재되어 KMS 경로와 IAM 확인 과정이 복잡했습니다.

@@ -2,6 +2,7 @@ import { getUpbitCredential } from "../repositories/upbitCredentialRepository";
 import type {
   UpbitAccountBalanceDto,
   UpbitDecryptedCredential,
+  UpbitCredentialPayload,
 } from "../types/upbit";
 import { decryptText } from "../utils/kms";
 import { getUpbitAccounts } from "./upbitService";
@@ -12,6 +13,20 @@ export async function getDecryptedUpbitCredential(
   const credential = await getUpbitCredential(userId);
 
   if (!credential) {
+    return null;
+  }
+
+  if (credential.credentialEncrypted) {
+    const decryptedPayload = await decryptText(credential.credentialEncrypted);
+    const parsedPayload = JSON.parse(decryptedPayload) as UpbitCredentialPayload;
+
+    return {
+      accessKey: parsedPayload.accessKey,
+      secretKey: parsedPayload.secretKey,
+    };
+  }
+
+  if (!credential.accessKeyEncrypted || !credential.secretKeyEncrypted) {
     return null;
   }
 

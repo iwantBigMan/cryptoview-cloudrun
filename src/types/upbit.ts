@@ -18,9 +18,15 @@ export interface UpbitValidateAndSaveResponse extends UpbitValidateResponse {
   saved?: boolean;
 }
 
+export interface UpbitCredentialDeleteResponse {
+  deleted: boolean;
+  message: string;
+}
+
 export interface UpbitCredentialDocument {
-  accessKeyEncrypted: string;
-  secretKeyEncrypted: string;
+  credentialEncrypted?: string;
+  accessKeyEncrypted?: string;
+  secretKeyEncrypted?: string;
   isValid: true;
   validatedAt: unknown;
   createdAt: unknown;
@@ -28,6 +34,11 @@ export interface UpbitCredentialDocument {
 }
 
 export interface UpbitDecryptedCredential {
+  accessKey: string;
+  secretKey: string;
+}
+
+export interface UpbitCredentialPayload {
   accessKey: string;
   secretKey: string;
 }

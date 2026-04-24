@@ -17,6 +17,7 @@ export async function getUpbitAccountsController(
 
   try {
     const accounts = await getUpbitAccountsByUserId(userId);
+    console.log("getUpbitAccounts response:", accounts);
     res.status(200).json(accounts);
   } catch (error) {
     if (

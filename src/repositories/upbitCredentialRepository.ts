@@ -7,8 +7,7 @@ const firestore = new Firestore({
 
 export async function saveUpbitCredential(
   userId: string,
-  encryptedAccessKey: string,
-  encryptedSecretKey: string,
+  encryptedCredential: string,
 ): Promise<void> {
   const documentRef = firestore.doc(
     `users/${userId}/exchangeCredentials/upbit`,
@@ -19,8 +18,7 @@ export async function saveUpbitCredential(
     const now = FieldValue.serverTimestamp();
 
     const document: UpbitCredentialDocument = {
-      accessKeyEncrypted: encryptedAccessKey,
-      secretKeyEncrypted: encryptedSecretKey,
+      credentialEncrypted: encryptedCredential,
       isValid: true,
       validatedAt: now,
       createdAt: snapshot.exists ? snapshot.get("createdAt") ?? now : now,
@@ -48,4 +46,9 @@ export async function getUpbitCredential(
   }
 
   return data as UpbitCredentialDocument;
+}
+
+export async function deleteUpbitCredential(userId: string): Promise<void> {
+  const documentRef = firestore.doc(`users/${userId}/exchangeCredentials/upbit`);
+  await documentRef.delete();
 }

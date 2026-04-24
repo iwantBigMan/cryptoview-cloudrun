@@ -1,6 +1,10 @@
 import type { Request, Response } from "express";
-import { validateAndSaveUpbitCredential } from "../services/upbitCredentialService";
+import {
+  deleteUpbitCredentialByUserId,
+  validateAndSaveUpbitCredential,
+} from "../services/upbitCredentialService";
 import type {
+  UpbitCredentialDeleteResponse,
   UpbitValidateAndSaveRequest,
   UpbitValidateAndSaveResponse,
 } from "../types/upbit";
@@ -45,6 +49,35 @@ export async function validateAndSaveUpbitCredentialController(
     console.error("validate-and-save failed:", error);
     res.status(500).json({
       valid: false,
+      message: "Internal server error.",
+    });
+  }
+}
+
+export async function deleteUpbitCredentialController(
+  _req: Request,
+  res: Response<UpbitCredentialDeleteResponse, { authUserId?: string }>,
+): Promise<void> {
+  const userId = res.locals.authUserId;
+
+  if (!userId) {
+    res.status(401).json({
+      deleted: false,
+      message: "Unauthorized request.",
+    });
+    return;
+  }
+
+  try {
+    await deleteUpbitCredentialByUserId(userId);
+    res.status(200).json({
+      deleted: true,
+      message: "Upbit credential deleted successfully.",
+    });
+  } catch (error) {
+    console.error("deleteUpbitCredential failed:", error);
+    res.status(500).json({
+      deleted: false,
       message: "Internal server error.",
     });
   }
