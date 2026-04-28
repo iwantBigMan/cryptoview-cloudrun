@@ -96,9 +96,13 @@ src/
 }
 ```
 
-### `GET /my-ip`
+### `GET /ip`
 
 Cloud Run의 현재 outbound IP를 확인하는 테스트용 엔드포인트입니다.
+
+### `GET /my-ip`
+
+`/ip`와 동일한 응답을 반환하는 기존 호환용 엔드포인트입니다.
 
 ### `POST /api/exchange/upbit/validate-and-save`
 
@@ -259,8 +263,8 @@ Cloud Run 서비스 계정에는 최소 아래 권한이 필요합니다.
 
 현재 서비스 계정 확인 예시:
 
-```bash
-gcloud run services describe cryptoview-api --region us-central1 --format="value(spec.template.spec.serviceAccountName)"
+```powershell
+gcloud run services describe cryptoview-api --region asia-northeast3 --format="value(spec.template.spec.serviceAccountName)"
 ```
 
 ## 로컬 실행
@@ -289,18 +293,197 @@ npm run dev
 npm run build
 ```
 
+## 서울 리전 고정 outbound IP 배포
+
+업비트 API 키의 IP 허용 목록을 사용할 경우 Cloud Run의 outbound IP를 고정해야 합니다. 이 프로젝트는 서울 리전 `asia-northeast3`에서 Direct VPC egress와 Cloud NAT를 사용해 아래 흐름으로 배포합니다.
+
+```text
+Cloud Run -> Direct VPC egress -> default VPC -> Cloud NAT -> upbit-static-ip-seoul -> Upbit API
+```
+
+기본 가정:
+- 프로젝트 ID: `crytoview`
+- 서비스명: `cryptoview-api`
+- 리전: `asia-northeast3`
+- 네트워크: `default`
+- 서브넷: `default`
+- 고정 IP 이름: `upbit-static-ip-seoul`
+- Cloud Router 이름: `cryptoview-router-seoul`
+- Cloud NAT 이름: `cryptoview-nat-seoul`
+
+### 1. 프로젝트 설정 확인
+
+```powershell
+gcloud config set project crytoview
+gcloud config get-value project
+```
+
+### 2. 서울 리전 고정 외부 IP 예약
+
+```powershell
+gcloud compute addresses create upbit-static-ip-seoul `
+  --region asia-northeast3
+```
+
+예약된 IP 확인:
+
+```powershell
+gcloud compute addresses describe upbit-static-ip-seoul `
+  --region asia-northeast3 `
+  --format="value(address)"
+```
+
+위 명령으로 출력된 IP를 업비트 API 키의 허용 IP에 등록합니다.
+
+### 3. Cloud Router 생성
+
+```powershell
+gcloud compute routers create cryptoview-router-seoul `
+  --region asia-northeast3 `
+  --network default
+```
+
+### 4. Cloud NAT 생성
+
+```powershell
+gcloud compute routers nats create cryptoview-nat-seoul `
+  --router cryptoview-router-seoul `
+  --router-region asia-northeast3 `
+  --nat-external-ip-pool upbit-static-ip-seoul `
+  --nat-all-subnet-ip-ranges
+```
+
+### 5. Cloud Run 배포
+
+Direct VPC egress를 사용하고 모든 outbound 트래픽이 Cloud NAT를 통과하도록 `--vpc-egress all-traffic`을 지정합니다.
+
+```powershell
+gcloud run deploy cryptoview-api `
+  --source . `
+  --region asia-northeast3 `
+  --allow-unauthenticated `
+  --network default `
+  --subnet default `
+  --vpc-egress all-traffic `
+  --max-instances 20 `
+  --set-env-vars "FIREBASE_PROJECT_ID=crytoview,FIRESTORE_DATABASE_ID=cryptoview,GOOGLE_CLOUD_KMS_KEY_NAME=projects/crytoview/locations/global/keyRings/cryptoview-ring/cryptoKeys/exchange-credentials-key"
+```
+
+### 6. 환경변수만 업데이트
+
+```powershell
+gcloud run services update cryptoview-api `
+  --region asia-northeast3 `
+  --update-env-vars "FIREBASE_PROJECT_ID=crytoview,FIRESTORE_DATABASE_ID=cryptoview,GOOGLE_CLOUD_KMS_KEY_NAME=projects/crytoview/locations/global/keyRings/cryptoview-ring/cryptoKeys/exchange-credentials-key"
+```
+
+### 7. outbound IP 검증
+
+배포 URL 확인:
+
+```powershell
+gcloud run services describe cryptoview-api `
+  --region asia-northeast3 `
+  --format="value(status.url)"
+```
+
+Cloud Run이 실제로 사용하는 outbound IP 확인:
+
+```powershell
+$BASE_URL = gcloud run services describe cryptoview-api `
+  --region asia-northeast3 `
+  --format="value(status.url)"
+
+Invoke-RestMethod "$BASE_URL/ip"
+```
+
+응답의 `ip` 값이 `upbit-static-ip-seoul` 주소와 같아야 합니다.
+
+### 8. API 검증
+
+```powershell
+$BASE_URL = gcloud run services describe cryptoview-api `
+  --region asia-northeast3 `
+  --format="value(status.url)"
+
+Invoke-RestMethod "$BASE_URL/test"
+```
+
+자산 조회:
+
+```powershell
+$BASE_URL = gcloud run services describe cryptoview-api `
+  --region asia-northeast3 `
+  --format="value(status.url)"
+
+Invoke-RestMethod "$BASE_URL/api/exchange/upbit/accounts" `
+  -Headers @{ Authorization = "Bearer YOUR_FIREBASE_ID_TOKEN" }
+```
+
+### 비용 발생 가능 리소스
+
+- 예약된 정적 외부 IP
+- Cloud NAT
+- Cloud Router
+- Cloud Run 요청, CPU, 메모리
+- Cloud Build
+- Firestore
+- Cloud KMS
+- Cloud Logging
+
+사용하지 않는 정적 외부 IP는 비용이 발생할 수 있으므로 테스트 후 정리합니다.
+
+### 되돌리기 / 삭제
+
+서울 리전 Cloud Run 서비스 삭제:
+
+```powershell
+gcloud run services delete cryptoview-api `
+  --region asia-northeast3
+```
+
+Cloud NAT 삭제:
+
+```powershell
+gcloud compute routers nats delete cryptoview-nat-seoul `
+  --router cryptoview-router-seoul `
+  --router-region asia-northeast3
+```
+
+Cloud Router 삭제:
+
+```powershell
+gcloud compute routers delete cryptoview-router-seoul `
+  --region asia-northeast3
+```
+
+고정 외부 IP 삭제:
+
+```powershell
+gcloud compute addresses delete upbit-static-ip-seoul `
+  --region asia-northeast3
+```
+
 ## 배포
 
-Cloud Run 배포:
+Cloud Run 서울 리전 배포:
 
-```bash
-gcloud run deploy cryptoview-api --source . --region us-central1 --allow-unauthenticated
+```powershell
+gcloud run deploy cryptoview-api `
+  --source . `
+  --region asia-northeast3 `
+  --allow-unauthenticated `
+  --network default `
+  --subnet default `
+  --vpc-egress all-traffic
 ```
 
 환경변수 업데이트 예시:
 
-```bash
-gcloud run services update cryptoview-api --region us-central1 --update-env-vars "FIREBASE_PROJECT_ID=crytoview,FIRESTORE_DATABASE_ID=cryptoview,GOOGLE_CLOUD_KMS_KEY_NAME=projects/crytoview/locations/global/keyRings/cryptoview-ring/cryptoKeys/exchange-credentials-key"
+```powershell
+gcloud run services update cryptoview-api `
+  --region asia-northeast3 `
+  --update-env-vars "FIREBASE_PROJECT_ID=crytoview,FIRESTORE_DATABASE_ID=cryptoview,GOOGLE_CLOUD_KMS_KEY_NAME=projects/crytoview/locations/global/keyRings/cryptoview-ring/cryptoKeys/exchange-credentials-key"
 ```
 
 ## 테스트 예시
@@ -308,7 +491,7 @@ gcloud run services update cryptoview-api --region us-central1 --update-env-vars
 ### 키 저장
 
 ```bash
-curl -X POST "https://cryptoview-api-620339426938.us-central1.run.app/api/exchange/upbit/validate-and-save" \
+curl -X POST "https://cryptoview-api-620339426938.asia-northeast3.run.app/api/exchange/upbit/validate-and-save" \
   -H "Authorization: Bearer YOUR_FIREBASE_ID_TOKEN" \
   -H "Content-Type: application/json" \
   -d "{\"accessKey\":\"YOUR_ACCESS_KEY\",\"secretKey\":\"YOUR_SECRET_KEY\"}"
@@ -317,7 +500,7 @@ curl -X POST "https://cryptoview-api-620339426938.us-central1.run.app/api/exchan
 ### 자산 조회
 
 ```bash
-curl -X GET "https://cryptoview-api-620339426938.us-central1.run.app/api/exchange/upbit/accounts" \
+curl -X GET "https://cryptoview-api-620339426938.asia-northeast3.run.app/api/exchange/upbit/accounts" \
   -H "Authorization: Bearer YOUR_FIREBASE_ID_TOKEN"
 ```
 

@@ -8,7 +8,7 @@ export const options = {
 
 const BASE_URL =
   __ENV.BASE_URL ||
-  "https://cryptoview-api-620339426938.us-central1.run.app";
+  "https://cryptoview-api-620339426938.asia-northeast3.run.app";
 const FIREBASE_ID_TOKEN = __ENV.FIREBASE_ID_TOKEN || "PUT_FIREBASE_ID_TOKEN_HERE";
 
 export default function () {

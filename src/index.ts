@@ -18,11 +18,22 @@ app.get("/test", (_req, res) => {
   });
 });
 
+async function getOutboundIp(): Promise<{ ip?: string }> {
+  const response = await fetch("https://api.ipify.org?format=json");
+  return (await response.json()) as { ip?: string };
+}
+
+app.get("/ip", async (_req, res) => {
+  try {
+    res.json(await getOutboundIp());
+  } catch {
+    res.status(500).json({ message: "failed to get outbound ip" });
+  }
+});
+
 app.get("/my-ip", async (_req, res) => {
   try {
-    const response = await fetch("https://api.ipify.org?format=json");
-    const data = (await response.json()) as { ip?: string };
-    res.json(data);
+    res.json(await getOutboundIp());
   } catch {
     res.status(500).json({ message: "failed to get outbound ip" });
   }

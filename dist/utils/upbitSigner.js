@@ -12,6 +12,6 @@ function createUpbitJwt(accessKey, secretKey) {
         nonce: (0, crypto_1.randomUUID)(),
     };
     return jsonwebtoken_1.default.sign(payload, secretKey, {
-        algorithm: "HS256",
+        algorithm: "HS512",
     });
 }
