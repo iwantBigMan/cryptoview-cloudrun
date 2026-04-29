@@ -1,11 +1,13 @@
 import express from "express";
 import cors from "cors";
+import exchangeGateIoRouter from "./routes/exchangeGateio";
 import exchangeUpbitRouter from "./routes/exchangeUpbit";
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use("/api/exchange/gateio", exchangeGateIoRouter);
 app.use("/api/exchange/upbit", exchangeUpbitRouter);
 
 app.get("/", (_req, res) => {

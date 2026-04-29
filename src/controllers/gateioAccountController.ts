@@ -1,10 +1,10 @@
 import type { Request, Response } from "express";
-import { getUpbitAccountsByUserId } from "../services/upbit/upbitAccountService";
-import type { UpbitAccountBalanceDto } from "../types/upbit";
+import { getGateIoAccountsByUserId } from "../services/gateio/gateioAccountService";
+import type { GateIoSpotAccountDto } from "../types/gateio";
 
-export async function getUpbitAccountsController(
+export async function getGateIoAccountsController(
   _req: Request,
-  res: Response<UpbitAccountBalanceDto[] | { message: string }, { authUserId?: string }>,
+  res: Response<GateIoSpotAccountDto[] | { message: string }, { authUserId?: string }>,
 ): Promise<void> {
   const userId = res.locals.authUserId;
 
@@ -16,12 +16,12 @@ export async function getUpbitAccountsController(
   }
 
   try {
-    const accounts = await getUpbitAccountsByUserId(userId);
+    const accounts = await getGateIoAccountsByUserId(userId);
     res.status(200).json(accounts);
   } catch (error) {
     if (
       error instanceof Error &&
-      error.message === "Upbit credential not found."
+      error.message === "Gate.io credential not found."
     ) {
       res.status(404).json({
         message: error.message,
@@ -29,7 +29,7 @@ export async function getUpbitAccountsController(
       return;
     }
 
-    console.error("getUpbitAccounts failed:", error);
+    console.error("getGateIoAccounts failed:", error);
     res.status(500).json({
       message: "Internal server error.",
     });

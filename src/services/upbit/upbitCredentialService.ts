@@ -1,12 +1,12 @@
 import {
   deleteUpbitCredential,
   saveUpbitCredential,
-} from "../repositories/upbitCredentialRepository";
+} from "../../repositories/upbitCredentialRepository";
 import type {
   UpbitCredentialPayload,
   UpbitValidationResult,
-} from "../types/upbit";
-import { encryptText } from "../utils/kms";
+} from "../../types/upbit";
+import { encryptText } from "../../utils/kms";
 import { validateUpbitKey } from "./upbitService";
 
 export async function validateAndSaveUpbitCredential(

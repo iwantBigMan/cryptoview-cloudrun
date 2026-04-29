@@ -1,10 +1,10 @@
-import { getUpbitCredential } from "../repositories/upbitCredentialRepository";
+import { getUpbitCredential } from "../../repositories/upbitCredentialRepository";
 import type {
   UpbitAccountBalanceDto,
   UpbitDecryptedCredential,
   UpbitCredentialPayload,
-} from "../types/upbit";
-import { decryptText } from "../utils/kms";
+} from "../../types/upbit";
+import { decryptText } from "../../utils/kms";
 import { getUpbitAccounts } from "./upbitService";
 
 export async function getDecryptedUpbitCredential(

@@ -1,8 +1,8 @@
-import { createUpbitJwt } from "../utils/upbitSigner";
+import { createUpbitJwt } from "../../utils/upbitSigner";
 import type {
   UpbitAccountBalanceDto,
   UpbitValidationResult,
-} from "../types/upbit";
+} from "../../types/upbit";
 
 const UPBIT_ACCOUNTS_URL = "https://api.upbit.com/v1/accounts";
 const UPBIT_REQUEST_TIMEOUT_MS = 7000;
