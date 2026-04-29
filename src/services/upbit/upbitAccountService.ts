@@ -1,9 +1,9 @@
-import { getUpbitCredential } from "../../repositories/upbitCredentialRepository";
+import { getUpbitCredential } from "../../repositories/upbit/upbitCredentialRepository";
 import type {
   UpbitAccountBalanceDto,
   UpbitDecryptedCredential,
   UpbitCredentialPayload,
-} from "../../types/upbit";
+} from "../../types/upbit/upbit";
 import { decryptText } from "../../utils/kms";
 import { getUpbitAccounts } from "./upbitService";
 

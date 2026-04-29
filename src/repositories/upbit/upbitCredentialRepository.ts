@@ -1,25 +1,23 @@
 import { FieldValue, Firestore } from "@google-cloud/firestore";
-import type { GateIoCredentialDocument } from "../types/gateio";
+import type { UpbitCredentialDocument } from "../../types/upbit/upbit";
 
 const firestore = new Firestore({
   databaseId: process.env.FIRESTORE_DATABASE_ID ?? "cryptoview",
 });
 
-export async function saveGateIoCredential(
+export async function saveUpbitCredential(
   userId: string,
   encryptedCredential: string,
 ): Promise<void> {
-  // 거래소별 credential은 Firebase uid 아래의 고정 문서 ID로 저장합니다.
   const documentRef = firestore.doc(
-    `users/${userId}/exchangeCredentials/gateio`,
+    `users/${userId}/exchangeCredentials/upbit`,
   );
 
   await firestore.runTransaction(async (transaction) => {
     const snapshot = await transaction.get(documentRef);
     const now = FieldValue.serverTimestamp();
 
-    // createdAt은 최초 저장 시각을 유지하고, 검증/갱신 시각만 새로 씁니다.
-    const document: GateIoCredentialDocument = {
+    const document: UpbitCredentialDocument = {
       credentialEncrypted: encryptedCredential,
       isValid: true,
       validatedAt: now,
@@ -31,10 +29,10 @@ export async function saveGateIoCredential(
   });
 }
 
-export async function getGateIoCredential(
+export async function getUpbitCredential(
   userId: string,
-): Promise<GateIoCredentialDocument | null> {
-  const documentRef = firestore.doc(`users/${userId}/exchangeCredentials/gateio`);
+): Promise<UpbitCredentialDocument | null> {
+  const documentRef = firestore.doc(`users/${userId}/exchangeCredentials/upbit`);
   const snapshot = await documentRef.get();
 
   if (!snapshot.exists) {
@@ -47,10 +45,10 @@ export async function getGateIoCredential(
     return null;
   }
 
-  return data as GateIoCredentialDocument;
+  return data as UpbitCredentialDocument;
 }
 
-export async function deleteGateIoCredential(userId: string): Promise<void> {
-  const documentRef = firestore.doc(`users/${userId}/exchangeCredentials/gateio`);
+export async function deleteUpbitCredential(userId: string): Promise<void> {
+  const documentRef = firestore.doc(`users/${userId}/exchangeCredentials/upbit`);
   await documentRef.delete();
 }

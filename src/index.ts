@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
-import exchangeGateIoRouter from "./routes/exchangeGateio";
-import exchangeUpbitRouter from "./routes/exchangeUpbit";
+import exchangeGateIoRouter from "./routes/gateio/exchangeGateio";
+import exchangeUpbitRouter from "./routes/upbit/exchangeUpbit";
 
 const app = express();
 

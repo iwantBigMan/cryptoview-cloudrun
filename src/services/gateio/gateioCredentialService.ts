@@ -1,11 +1,11 @@
 import {
   deleteGateIoCredential,
   saveGateIoCredential,
-} from "../../repositories/gateioCredentialRepository";
+} from "../../repositories/gateio/gateioCredentialRepository";
 import type {
   GateIoCredentialPayload,
   GateIoValidationResult,
-} from "../../types/gateio";
+} from "../../types/gateio/gateio";
 import { encryptText } from "../../utils/kms";
 import { validateGateIoKey } from "./gateioService";
 

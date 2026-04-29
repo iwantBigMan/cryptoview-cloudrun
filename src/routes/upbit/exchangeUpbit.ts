@@ -1,10 +1,10 @@
 import { Router } from "express";
-import { getUpbitAccountsController } from "../controllers/upbitAccountController";
+import { getUpbitAccountsController } from "../../controllers/upbit/upbitAccountController";
 import {
   deleteUpbitCredentialController,
   validateAndSaveUpbitCredentialController,
-} from "../controllers/upbitCredentialController";
-import { requireFirebaseAuth } from "../middlewares/firebaseAuth";
+} from "../../controllers/upbit/upbitCredentialController";
+import { requireFirebaseAuth } from "../../middlewares/firebaseAuth";
 
 const router = Router();
 

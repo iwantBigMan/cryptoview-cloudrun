@@ -1,9 +1,9 @@
-import { getGateIoCredential } from "../../repositories/gateioCredentialRepository";
+import { getGateIoCredential } from "../../repositories/gateio/gateioCredentialRepository";
 import type {
   GateIoCredentialPayload,
   GateIoDecryptedCredential,
   GateIoSpotAccountDto,
-} from "../../types/gateio";
+} from "../../types/gateio/gateio";
 import { decryptText } from "../../utils/kms";
 import { getGateIoSpotAccounts } from "./gateioService";
 

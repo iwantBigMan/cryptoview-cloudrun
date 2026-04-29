@@ -1,11 +1,11 @@
 import {
   deleteUpbitCredential,
   saveUpbitCredential,
-} from "../../repositories/upbitCredentialRepository";
+} from "../../repositories/upbit/upbitCredentialRepository";
 import type {
   UpbitCredentialPayload,
   UpbitValidationResult,
-} from "../../types/upbit";
+} from "../../types/upbit/upbit";
 import { encryptText } from "../../utils/kms";
 import { validateUpbitKey } from "./upbitService";
 

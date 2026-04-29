@@ -1,7 +1,7 @@
 import type {
   GateIoSpotAccountDto,
   GateIoValidationResult,
-} from "../../types/gateio";
+} from "../../types/gateio/gateio";
 import { createGateIoSignedRequest } from "../../utils/exchangeSigner";
 
 const GATEIO_API_BASE_URL = "https://api.gateio.ws";

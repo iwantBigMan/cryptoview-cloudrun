@@ -1,17 +1,17 @@
 import type { Request, Response } from "express";
 import {
-  deleteGateIoCredentialByUserId,
-  validateAndSaveGateIoCredential,
-} from "../services/gateio/gateioCredentialService";
+  deleteUpbitCredentialByUserId,
+  validateAndSaveUpbitCredential,
+} from "../../services/upbit/upbitCredentialService";
 import type {
-  GateIoCredentialDeleteResponse,
-  GateIoValidateAndSaveRequest,
-  GateIoValidateAndSaveResponse,
-} from "../types/gateio";
+  UpbitCredentialDeleteResponse,
+  UpbitValidateAndSaveRequest,
+  UpbitValidateAndSaveResponse,
+} from "../../types/upbit/upbit";
 
-export async function validateAndSaveGateIoCredentialController(
-  req: Request<unknown, unknown, Partial<GateIoValidateAndSaveRequest>>,
-  res: Response<GateIoValidateAndSaveResponse, { authUserId?: string }>,
+export async function validateAndSaveUpbitCredentialController(
+  req: Request<unknown, unknown, Partial<UpbitValidateAndSaveRequest>>,
+  res: Response<UpbitValidateAndSaveResponse, { authUserId?: string }>,
 ): Promise<void> {
   const accessKey = req.body.accessKey?.trim();
   const secretKey = req.body.secretKey?.trim();
@@ -34,7 +34,7 @@ export async function validateAndSaveGateIoCredentialController(
   }
 
   try {
-    const result = await validateAndSaveGateIoCredential(
+    const result = await validateAndSaveUpbitCredential(
       accessKey,
       secretKey,
       userId,
@@ -46,7 +46,7 @@ export async function validateAndSaveGateIoCredentialController(
       saved: result.saved,
     });
   } catch (error) {
-    console.error("validate-and-save Gate.io failed:", error);
+    console.error("validate-and-save failed:", error);
     res.status(500).json({
       valid: false,
       message: "Internal server error.",
@@ -54,9 +54,9 @@ export async function validateAndSaveGateIoCredentialController(
   }
 }
 
-export async function deleteGateIoCredentialController(
+export async function deleteUpbitCredentialController(
   _req: Request,
-  res: Response<GateIoCredentialDeleteResponse, { authUserId?: string }>,
+  res: Response<UpbitCredentialDeleteResponse, { authUserId?: string }>,
 ): Promise<void> {
   const userId = res.locals.authUserId;
 
@@ -69,13 +69,13 @@ export async function deleteGateIoCredentialController(
   }
 
   try {
-    await deleteGateIoCredentialByUserId(userId);
+    await deleteUpbitCredentialByUserId(userId);
     res.status(200).json({
       deleted: true,
-      message: "Gate.io credential deleted successfully.",
+      message: "Upbit credential deleted successfully.",
     });
   } catch (error) {
-    console.error("deleteGateIoCredential failed:", error);
+    console.error("deleteUpbitCredential failed:", error);
     res.status(500).json({
       deleted: false,
       message: "Internal server error.",

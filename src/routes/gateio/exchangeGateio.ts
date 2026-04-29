@@ -1,10 +1,10 @@
 import { Router } from "express";
-import { getGateIoAccountsController } from "../controllers/gateioAccountController";
+import { getGateIoAccountsController } from "../../controllers/gateio/gateioAccountController";
 import {
   deleteGateIoCredentialController,
   validateAndSaveGateIoCredentialController,
-} from "../controllers/gateioCredentialController";
-import { requireFirebaseAuth } from "../middlewares/firebaseAuth";
+} from "../../controllers/gateio/gateioCredentialController";
+import { requireFirebaseAuth } from "../../middlewares/firebaseAuth";
 
 const router = Router();
 
