@@ -1,9 +1,9 @@
 import type { Request, Response } from "express";
-import { getGateIoSpotAveragePrice } from "../services/gateioService";
+import { getGateIoSpotAveragePrice } from "../../services/gateio/gateioService";
 import type {
   GateIoAveragePriceResult,
   GateIoSpotAveragePriceRequest,
-} from "../types/gateio";
+} from "../../types/gateio/gateio";
 
 type GateIoAveragePriceErrorResponse = {
   message: string;

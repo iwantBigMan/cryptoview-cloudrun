@@ -1,13 +1,13 @@
 import express from "express";
 import cors from "cors";
-import exchangeGateioRouter from "./routes/exchangeGateio";
-import exchangeUpbitRouter from "./routes/exchangeUpbit";
+import exchangeGateIoRouter from "./routes/gateio/exchangeGateio";
+import exchangeUpbitRouter from "./routes/upbit/exchangeUpbit";
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
-app.use("/api/exchange/gateio", exchangeGateioRouter);
+app.use("/api/exchange/gateio", exchangeGateIoRouter);
 app.use("/api/exchange/upbit", exchangeUpbitRouter);
 
 app.get("/", (_req, res) => {
@@ -20,11 +20,22 @@ app.get("/test", (_req, res) => {
   });
 });
 
+async function getOutboundIp(): Promise<{ ip?: string }> {
+  const response = await fetch("https://api.ipify.org?format=json");
+  return (await response.json()) as { ip?: string };
+}
+
+app.get("/ip", async (_req, res) => {
+  try {
+    res.json(await getOutboundIp());
+  } catch {
+    res.status(500).json({ message: "failed to get outbound ip" });
+  }
+});
+
 app.get("/my-ip", async (_req, res) => {
   try {
-    const response = await fetch("https://api.ipify.org?format=json");
-    const data = (await response.json()) as { ip?: string };
-    res.json(data);
+    res.json(await getOutboundIp());
   } catch {
     res.status(500).json({ message: "failed to get outbound ip" });
   }

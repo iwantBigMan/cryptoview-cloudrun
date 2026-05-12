@@ -2,11 +2,12 @@ import type {
   GateIoAveragePriceResult,
   GateIoSpotAccountDto,
   GateIoSpotTradeDto,
-} from "../types/gateio";
-import { createGateIoSignedRequest } from "../utils/exchangeSigner";
-import { calculateGateIoSpotAveragePrice } from "../utils/gateioSpotAveragePrice";
+  GateIoValidationResult,
+} from "../../types/gateio/gateio";
+import { createGateIoSignedRequest } from "../../utils/exchangeSigner";
+import { calculateGateIoSpotAveragePrice } from "../../utils/gateioSpotAveragePrice";
 
-const GATEIO_BASE_URL = "https://api.gateio.ws";
+const GATEIO_API_BASE_URL = "https://api.gateio.ws";
 const GATEIO_API_PREFIX = "/api/v4";
 const GATEIO_REQUEST_TIMEOUT_MS = 30000;
 const GATEIO_TRADE_PAGE_LIMIT = 1000;
@@ -21,7 +22,9 @@ function normalizeCurrencyPair(currencyPair: string): string {
   return currencyPair.trim().toUpperCase();
 }
 
-function createQueryString(params: Record<string, string | number | undefined>): string {
+function createQueryString(
+  params: Record<string, string | number | undefined>,
+): string {
   const query = new URLSearchParams();
 
   for (const [key, value] of Object.entries(params)) {
@@ -33,20 +36,28 @@ function createQueryString(params: Record<string, string | number | undefined>):
   return query.toString();
 }
 
-async function parseGateIoError(response: Response): Promise<string> {
-  let body: GateIoErrorBody = {};
-
-  try {
-    body = (await response.json()) as GateIoErrorBody;
-  } catch {
-    body = {};
-  }
-
+function getFailureMessage(status: number, body: GateIoErrorBody): string {
   if (body.message) {
     return body.label ? `${body.label}: ${body.message}` : body.message;
   }
 
-  return `Gate.io API request failed with status ${response.status}.`;
+  if (body.label) {
+    return body.label;
+  }
+
+  if (status === 401 || status === 403) {
+    return "Gate.io API key is invalid.";
+  }
+
+  return `Gate.io API request failed with status ${status}.`;
+}
+
+async function parseGateIoErrorBody(response: Response): Promise<GateIoErrorBody> {
+  try {
+    return (await response.json()) as GateIoErrorBody;
+  } catch {
+    return {};
+  }
 }
 
 async function gateIoGet<T>(params: {
@@ -56,17 +67,18 @@ async function gateIoGet<T>(params: {
   queryString?: string;
 }): Promise<T> {
   const requestPath = `${GATEIO_API_PREFIX}${params.path}`;
+  const queryString = params.queryString ?? "";
   const signedRequest = createGateIoSignedRequest({
     accessKey: params.accessKey,
     secretKey: params.secretKey,
     method: "GET",
     requestPath,
-    queryString: params.queryString ?? "",
+    queryString,
+    payload: "",
   });
-
   const url =
-    `${GATEIO_BASE_URL}${requestPath}` +
-    (params.queryString ? `?${params.queryString}` : "");
+    `${GATEIO_API_BASE_URL}${requestPath}` +
+    (queryString ? `?${queryString}` : "");
 
   const response = await fetch(url, {
     method: "GET",
@@ -79,10 +91,32 @@ async function gateIoGet<T>(params: {
   });
 
   if (!response.ok) {
-    throw new Error(await parseGateIoError(response));
+    throw new Error(getFailureMessage(response.status, await parseGateIoErrorBody(response)));
   }
 
   return (await response.json()) as T;
+}
+
+export async function validateGateIoKey(
+  accessKey: string,
+  secretKey: string,
+): Promise<GateIoValidationResult> {
+  try {
+    await getGateIoSpotAccounts(accessKey, secretKey);
+
+    return {
+      valid: true,
+      message: "Gate.io API key is valid.",
+      statusCode: 200,
+    };
+  } catch (error) {
+    return {
+      valid: false,
+      message:
+        error instanceof Error ? error.message : "Failed to reach Gate.io API.",
+      statusCode: 502,
+    };
+  }
 }
 
 export async function getGateIoSpotAccounts(

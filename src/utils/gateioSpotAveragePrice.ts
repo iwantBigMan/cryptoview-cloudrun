@@ -3,7 +3,7 @@ import type {
   GateIoAveragePriceResult,
   GateIoSpotAccountDto,
   GateIoSpotTradeDto,
-} from "../types/gateio";
+} from "../types/gateio/gateio";
 
 const ZERO = new Decimal(0);
 const BALANCE_DIFF_TOLERANCE = new Decimal("0.00000001");
@@ -178,4 +178,3 @@ export function calculateGateIoSpotAveragePrice(params: {
     warnings: [...warnings],
   };
 }
-
