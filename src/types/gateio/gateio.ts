@@ -54,8 +54,6 @@ export interface GateIoSpotAccountDto {
 }
 
 export interface GateIoSpotAveragePriceRequest {
-  accessKey: string;
-  secretKey: string;
   currencyPair: string;
   from?: number;
   to?: number;
@@ -75,23 +73,4 @@ export interface GateIoSpotTradeDto {
   order_id?: string;
 }
 
-export interface GateIoAveragePriceResult {
-  currencyPair: string;
-  baseCurrency: string;
-  quoteCurrency: string;
-  quantity: string;
-  currentQuantity: string;
-  averagePrice: string;
-  totalCost: string;
-  tradeCount: number;
-  fetchedPages: number;
-  fees: {
-    baseCurrency: string;
-    quoteCurrency: string;
-    other: Array<{
-      currency: string;
-      amount: string;
-    }>;
-  };
-  warnings: string[];
-}
+export type { SpotAveragePriceResult as GateIoAveragePriceResult } from "../../domains/averagePrice/spotAveragePriceTypes";

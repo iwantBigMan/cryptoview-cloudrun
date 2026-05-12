@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { getGateIoSpotAveragePrice } from "../../services/gateio/gateioService";
+import { calculateGateIoSpotAveragePriceUsecase } from "../../domains/usecases/gateio/calculateGateIoSpotAveragePriceUsecase";
 import type {
   GateIoAveragePriceResult,
   GateIoSpotAveragePriceRequest,
@@ -20,20 +20,19 @@ export async function getGateIoSpotAveragePriceController(
     { authUserId?: string }
   >,
 ): Promise<void> {
-  const accessKey = req.body.accessKey?.trim();
-  const secretKey = req.body.secretKey?.trim();
   const currencyPair = req.body.currencyPair?.trim();
+  const userId = res.locals.authUserId;
 
-  if (!res.locals.authUserId) {
+  if (!userId) {
     res.status(401).json({
       message: "Unauthorized request.",
     });
     return;
   }
 
-  if (!accessKey || !secretKey || !currencyPair) {
+  if (!currencyPair) {
     res.status(400).json({
-      message: "accessKey, secretKey and currencyPair are required.",
+      message: "currencyPair is required.",
     });
     return;
   }
@@ -74,9 +73,8 @@ export async function getGateIoSpotAveragePriceController(
   }
 
   try {
-    const result = await getGateIoSpotAveragePrice({
-      accessKey,
-      secretKey,
+    const result = await calculateGateIoSpotAveragePriceUsecase({
+      userId,
       currencyPair,
       from: req.body.from,
       to: req.body.to,
@@ -85,6 +83,16 @@ export async function getGateIoSpotAveragePriceController(
 
     res.status(200).json(result);
   } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message === "Gate.io credential not found."
+    ) {
+      res.status(404).json({
+        message: error.message,
+      });
+      return;
+    }
+
     console.error("getGateIoSpotAveragePrice failed:", error);
 
     res.status(502).json({

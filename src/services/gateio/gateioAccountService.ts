@@ -5,7 +5,7 @@ import type {
   GateIoSpotAccountDto,
 } from "../../types/gateio/gateio";
 import { decryptText } from "../../utils/kms";
-import { getGateIoSpotAccounts } from "./gateioService";
+import { getGateIoSpotAccounts } from "../../infrastructure/gateio/gateioApiClient";
 
 export async function getDecryptedGateIoCredential(
   userId: string,

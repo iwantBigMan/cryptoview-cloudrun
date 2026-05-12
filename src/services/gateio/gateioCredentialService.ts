@@ -7,7 +7,7 @@ import type {
   GateIoValidationResult,
 } from "../../types/gateio/gateio";
 import { encryptText } from "../../utils/kms";
-import { validateGateIoKey } from "./gateioService";
+import { validateGateIoKey } from "../../infrastructure/gateio/gateioApiClient";
 
 export async function validateAndSaveGateIoCredential(
   accessKey: string,

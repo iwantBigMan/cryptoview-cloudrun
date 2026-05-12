@@ -1,9 +1,9 @@
 import Decimal from "decimal.js";
 import type {
-  GateIoAveragePriceResult,
-  GateIoSpotAccountDto,
-  GateIoSpotTradeDto,
-} from "../types/gateio/gateio";
+  SpotAveragePriceAccount,
+  SpotAveragePriceResult,
+  SpotAveragePriceTrade,
+} from "./spotAveragePriceTypes";
 
 const ZERO = new Decimal(0);
 const BALANCE_DIFF_TOLERANCE = new Decimal("0.00000001");
@@ -25,7 +25,7 @@ function normalizeCurrencyPair(currencyPair: string): {
   const [baseCurrency, quoteCurrency] = normalized.split("_");
 
   if (!baseCurrency || !quoteCurrency) {
-    throw new Error("currencyPair must use Gate.io format like BTC_USDT.");
+    throw new Error("currencyPair must use format like BTC_USDT.");
   }
 
   return {
@@ -33,14 +33,6 @@ function normalizeCurrencyPair(currencyPair: string): {
     baseCurrency,
     quoteCurrency,
   };
-}
-
-function getTradeTime(trade: GateIoSpotTradeDto): number {
-  if (trade.create_time_ms) {
-    return Number(trade.create_time_ms);
-  }
-
-  return Number(trade.create_time) * 1000;
 }
 
 function addOtherFee(
@@ -52,19 +44,19 @@ function addOtherFee(
   otherFees.set(currency, previous.plus(fee));
 }
 
-export function calculateGateIoSpotAveragePrice(params: {
+export function calculateSpotAveragePrice(params: {
   currencyPair: string;
-  trades: GateIoSpotTradeDto[];
-  accounts: GateIoSpotAccountDto[];
+  trades: SpotAveragePriceTrade[];
+  accounts: SpotAveragePriceAccount[];
   fetchedPages: number;
-}): GateIoAveragePriceResult {
+}): SpotAveragePriceResult {
   const { currencyPair, baseCurrency, quoteCurrency } = normalizeCurrencyPair(
     params.currencyPair,
   );
   const warnings = new Set<string>();
   const otherFees = new Map<string, Decimal>();
   const sortedTrades = [...params.trades].sort(
-    (a, b) => getTradeTime(a) - getTradeTime(b),
+    (a, b) => a.createdAtMs - b.createdAtMs,
   );
 
   let quantity = ZERO;
@@ -76,7 +68,7 @@ export function calculateGateIoSpotAveragePrice(params: {
     const amount = decimal(trade.amount);
     const price = decimal(trade.price);
     const fee = decimal(trade.fee);
-    const feeCurrency = trade.fee_currency.toUpperCase();
+    const feeCurrency = trade.feeCurrency.toUpperCase();
 
     if (trade.side === "buy") {
       let acquiredQuantity = amount;
@@ -102,42 +94,40 @@ export function calculateGateIoSpotAveragePrice(params: {
       continue;
     }
 
-    if (trade.side === "sell") {
-      let removedQuantity = amount;
+    let removedQuantity = amount;
 
-      if (fee.gt(ZERO) && feeCurrency === baseCurrency) {
-        removedQuantity = removedQuantity.plus(fee);
-        baseFees = baseFees.plus(fee);
-      } else if (fee.gt(ZERO) && feeCurrency === quoteCurrency) {
-        quoteFees = quoteFees.plus(fee);
-      } else if (fee.gt(ZERO)) {
-        addOtherFee(otherFees, feeCurrency, fee);
-      }
-
-      if (quantity.lte(ZERO)) {
-        warnings.add("A sell trade appeared before any tracked buy quantity.");
-        quantity = ZERO;
-        totalCost = ZERO;
-        continue;
-      }
-
-      const currentAveragePrice = totalCost.div(quantity);
-
-      if (removedQuantity.gte(quantity)) {
-        if (removedQuantity.gt(quantity)) {
-          warnings.add(
-            "Sell quantity exceeded tracked quantity. Older trades or transfers may be missing.",
-          );
-        }
-
-        quantity = ZERO;
-        totalCost = ZERO;
-        continue;
-      }
-
-      quantity = quantity.minus(removedQuantity);
-      totalCost = totalCost.minus(currentAveragePrice.mul(removedQuantity));
+    if (fee.gt(ZERO) && feeCurrency === baseCurrency) {
+      removedQuantity = removedQuantity.plus(fee);
+      baseFees = baseFees.plus(fee);
+    } else if (fee.gt(ZERO) && feeCurrency === quoteCurrency) {
+      quoteFees = quoteFees.plus(fee);
+    } else if (fee.gt(ZERO)) {
+      addOtherFee(otherFees, feeCurrency, fee);
     }
+
+    if (quantity.lte(ZERO)) {
+      warnings.add("A sell trade appeared before any tracked buy quantity.");
+      quantity = ZERO;
+      totalCost = ZERO;
+      continue;
+    }
+
+    const currentAveragePrice = totalCost.div(quantity);
+
+    if (removedQuantity.gte(quantity)) {
+      if (removedQuantity.gt(quantity)) {
+        warnings.add(
+          "Sell quantity exceeded tracked quantity. Older trades or transfers may be missing.",
+        );
+      }
+
+      quantity = ZERO;
+      totalCost = ZERO;
+      continue;
+    }
+
+    quantity = quantity.minus(removedQuantity);
+    totalCost = totalCost.minus(currentAveragePrice.mul(removedQuantity));
   }
 
   const account = params.accounts.find(
@@ -147,11 +137,9 @@ export function calculateGateIoSpotAveragePrice(params: {
     ? decimal(account.available).plus(decimal(account.locked))
     : ZERO;
 
-  const balanceDiff = currentQuantity.minus(quantity).abs();
-
-  if (balanceDiff.gt(BALANCE_DIFF_TOLERANCE)) {
+  if (currentQuantity.minus(quantity).abs().gt(BALANCE_DIFF_TOLERANCE)) {
     warnings.add(
-      "Calculated quantity differs from Gate.io spot balance. Deposits, withdrawals, airdrops, or incomplete trade history may affect the average price.",
+      "Calculated quantity differs from spot balance. Deposits, withdrawals, airdrops, or incomplete trade history may affect the average price.",
     );
   }
 
@@ -178,3 +166,4 @@ export function calculateGateIoSpotAveragePrice(params: {
     warnings: [...warnings],
   };
 }
+

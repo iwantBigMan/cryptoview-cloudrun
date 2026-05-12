@@ -1,11 +1,9 @@
 import type {
-  GateIoAveragePriceResult,
   GateIoSpotAccountDto,
   GateIoSpotTradeDto,
   GateIoValidationResult,
 } from "../../types/gateio/gateio";
 import { createGateIoSignedRequest } from "../../utils/exchangeSigner";
-import { calculateGateIoSpotAveragePrice } from "../../utils/gateioSpotAveragePrice";
 
 const GATEIO_API_BASE_URL = "https://api.gateio.ws";
 const GATEIO_API_PREFIX = "/api/v4";
@@ -91,7 +89,9 @@ async function gateIoGet<T>(params: {
   });
 
   if (!response.ok) {
-    throw new Error(getFailureMessage(response.status, await parseGateIoErrorBody(response)));
+    throw new Error(
+      getFailureMessage(response.status, await parseGateIoErrorBody(response)),
+    );
   }
 
   return (await response.json()) as T;
@@ -182,31 +182,3 @@ export async function getGateIoSpotTrades(params: {
   };
 }
 
-export async function getGateIoSpotAveragePrice(params: {
-  accessKey: string;
-  secretKey: string;
-  currencyPair: string;
-  from?: number;
-  to?: number;
-  maxPages?: number;
-}): Promise<GateIoAveragePriceResult> {
-  const [accounts, tradeResult] = await Promise.all([
-    getGateIoSpotAccounts(params.accessKey, params.secretKey),
-    getGateIoSpotTrades(params),
-  ]);
-
-  const result = calculateGateIoSpotAveragePrice({
-    currencyPair: params.currencyPair,
-    accounts,
-    trades: tradeResult.trades,
-    fetchedPages: tradeResult.fetchedPages,
-  });
-
-  if (tradeResult.reachedPageLimit) {
-    result.warnings.push(
-      "Trade history reached maxPages. Increase maxPages or narrow the time range for a more complete average price.",
-    );
-  }
-
-  return result;
-}
