@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import aiRouter from "./routes/ai/ai";
 import exchangeGateIoRouter from "./routes/gateio/exchangeGateio";
 import exchangeUpbitRouter from "./routes/upbit/exchangeUpbit";
 
@@ -7,6 +8,7 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use("/api/ai", aiRouter);
 app.use("/api/exchange/gateio", exchangeGateIoRouter);
 app.use("/api/exchange/upbit", exchangeUpbitRouter);
 
