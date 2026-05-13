@@ -99,5 +99,11 @@ export async function calculateGateIoSpotAveragePriceUsecase(params: {
     );
   }
 
+  if (tradeResult.usedDefaultLookback) {
+    result.warnings.push(
+      "Trade history was searched over the last 365 days because no from/to range was provided.",
+    );
+  }
+
   return result;
 }
