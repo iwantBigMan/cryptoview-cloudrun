@@ -3,34 +3,39 @@ import type {
   PortfolioInsightRequest,
 } from "../../types/ai/ai";
 
-function formatOptionalNumber(label: string, value: number | undefined): string {
-  return value === undefined ? `${label}: unknown` : `${label}: ${value}`;
+function formatMoney(value: number, baseCurrency: "KRW" | "USDT"): string {
+  return baseCurrency === "KRW"
+    ? `${Math.round(value).toLocaleString("en-US")} KRW`
+    : `${value.toFixed(2)} USDT`;
 }
 
-function formatRiskTags(riskTags: string[] | undefined): string {
-  return riskTags?.length ? riskTags.join(", ") : "none";
+function formatRate(value: number): string {
+  return `${value.toFixed(2)}%`;
 }
 
-function formatHolding(holding: PortfolioInsightHoldingInput): string {
+function formatHolding(
+  holding: PortfolioInsightHoldingInput,
+  baseCurrency: "KRW" | "USDT",
+): string {
   return [
-    `exchange: ${holding.exchange}`,
     `symbol: ${holding.symbol}`,
+    `market: ${holding.market}`,
     `quantity: ${holding.quantity}`,
-    `valuationKrw: ${holding.valuationKrw}`,
-    formatOptionalNumber("portfolioRatio", holding.portfolioRatio),
-    formatOptionalNumber("averagePrice", holding.averagePrice),
-    formatOptionalNumber("currentPrice", holding.currentPrice),
-    formatOptionalNumber("pnlKrw", holding.pnlKrw),
-    formatOptionalNumber("pnlRate", holding.pnlRate),
-    `riskTags: ${formatRiskTags(holding.riskTags)}`,
+    `averagePrice: ${formatMoney(holding.averagePrice, baseCurrency)}`,
+    `currentPrice: ${formatMoney(holding.currentPrice, baseCurrency)}`,
+    `valuation: ${formatMoney(holding.valuation, baseCurrency)}`,
+    `pnl: ${formatMoney(holding.pnl, baseCurrency)}`,
+    `pnlRate: ${formatRate(holding.pnlRate)}`,
   ].join(", ");
 }
 
 export function buildPortfolioInsightPrompt(
   request: PortfolioInsightRequest,
 ): string {
-  const baseCurrency = request.baseCurrency ?? "KRW";
-  const holdings = request.holdings.map(formatHolding).join("\n");
+  const { portfolioSummary } = request;
+  const holdings = request.holdings
+    .map((holding) => formatHolding(holding, portfolioSummary.baseCurrency))
+    .join("\n");
 
   return [
     "You are a portfolio insight assistant for a cryptocurrency asset app.",
@@ -38,17 +43,44 @@ export function buildPortfolioInsightPrompt(
     "Rules:",
     "- Do not provide investment advice, price predictions, or buy/sell/hold instructions.",
     "- Explain only observable portfolio facts, concentration, drawdown, and data quality issues.",
-    "- Risk tags are pre-calculated signals from the app. They are not investment recommendations.",
-    "- Use riskTags only to explain portfolio structure and possible attention points.",
     "- Do not invent risks that are not supported by the provided data.",
-    "- If averagePrice is unknown, mention that PnL accuracy may be limited.",
+    "- The portfolio summary is the source of truth for total valuation, total PnL, and total PnL rate.",
+    "- All money amounts are denominated in portfolioSummary.baseCurrency.",
+    "- KRW amounts are formatted without decimal places.",
+    "- USDT amounts are formatted with exactly 2 decimal places.",
+    "- Profit/loss rates must be formatted with exactly 2 decimal places.",
+    "- Detailed holding analysis must use only the holdings listed below.",
+    "- Assets missing from the holdings list do not have average price data and must be excluded from per-asset PnL analysis.",
+    "- If the holdings list is empty, still analyze the total portfolio summary and mention that per-asset average-price analysis is unavailable.",
     "- Keep the tone cautious and descriptive.",
-    `Base currency: ${baseCurrency}`,
-    formatOptionalNumber("Total valuation KRW", request.totalValuationKrw),
-    formatOptionalNumber("Total PnL KRW", request.totalPnlKrw),
-    formatOptionalNumber("Total PnL rate", request.totalPnlRate),
-    "Holdings:",
-    holdings || "No holdings provided.",
+    "Final response formatting rules:",
+    "- Return only the insight text, not JSON.",
+    "- Do not write one long paragraph.",
+    "- Write each main point as a '-' bullet.",
+    "- Separate each '-' bullet with a newline.",
+    "- Each bullet must be 1 or 2 short Korean sentences.",
+    "- Do not make bullets too long because the text is shown in a mobile dialog.",
+    "- In the final Korean answer, every KRW amount must look like '1,250,000 KRW' or '-85,000 KRW'.",
+    "- In the final Korean answer, every USDT amount must look like '892.86 USDT' or '-12.35 USDT'.",
+    "- In the final Korean answer, every rate must look like '7.30%' or '-23.20%'.",
+    "Final response examples:",
+    "- 전체 평가금액은 1,250,000 KRW이며 총 손익은 85,000 KRW입니다.",
+    "- 총 수익률은 7.30%로 현재 포트폴리오는 수익 구간입니다.",
+    "- 전체 평가금액은 892.86 USDT이며 총 손익은 60.71 USDT입니다.",
+    "Portfolio summary:",
+    `baseCurrency: ${portfolioSummary.baseCurrency}`,
+    `holdingsCount: ${portfolioSummary.holdingsCount}`,
+    `totalValuation: ${formatMoney(
+      portfolioSummary.totalValuation,
+      portfolioSummary.baseCurrency,
+    )}`,
+    `totalPnl: ${formatMoney(
+      portfolioSummary.totalPnl,
+      portfolioSummary.baseCurrency,
+    )}`,
+    `totalPnlRate: ${formatRate(portfolioSummary.totalPnlRate)}`,
+    "Holdings with average price data:",
+    holdings || "No holdings with average price data provided.",
     "Write the final response in Korean in 3 short bullet points.",
   ].join("\n");
 }

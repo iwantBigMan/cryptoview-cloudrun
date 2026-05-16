@@ -1,48 +1,27 @@
 import type { Request, Response } from "express";
-import { generatePortfolioInsight } from "../../services/ai/portfolioInsightService";
+import {
+  isEmptyPortfolioInsightRequest,
+  isValidPortfolioInsightRequest,
+} from "../../domains/ai/portfolioInsightRequestValidator";
 import {
   AiProviderNotConfiguredError,
   UnsupportedAiProviderError,
 } from "../../infrastructure/ai/aiTextGenerationClient";
+import { generatePortfolioInsight } from "../../services/ai/portfolioInsightService";
 import type {
   AiErrorResponse,
   PortfolioInsightRequest,
   PortfolioInsightResponse,
 } from "../../types/ai/ai";
 
-function isValidHolding(value: unknown): boolean {
-  if (typeof value !== "object" || value === null) {
-    return false;
-  }
-
-  const holding = value as Record<string, unknown>;
-
-  return (
-    typeof holding.exchange === "string" &&
-    typeof holding.symbol === "string" &&
-    typeof holding.quantity === "number" &&
-    typeof holding.valuationKrw === "number" &&
-    (holding.portfolioRatio === undefined ||
-      typeof holding.portfolioRatio === "number") &&
-    (holding.riskTags === undefined ||
-      (Array.isArray(holding.riskTags) &&
-        holding.riskTags.every((item) => typeof item === "string")))
-  );
-}
-
-function isValidPortfolioInsightRequest(
-  body: Partial<PortfolioInsightRequest>,
-): body is PortfolioInsightRequest {
-  return Array.isArray(body.holdings) && body.holdings.every(isValidHolding);
-}
-
 function logPortfolioInsightSnapshot(request: PortfolioInsightRequest): void {
   console.log("AI portfolio insight snapshot received:", {
-    baseCurrency: request.baseCurrency ?? "KRW",
-    holdingsCount: request.holdings.length,
-    totalValuationKrw: request.totalValuationKrw,
-    totalPnlKrw: request.totalPnlKrw,
-    totalPnlRate: request.totalPnlRate,
+    baseCurrency: request.portfolioSummary.baseCurrency,
+    holdingsCount: request.portfolioSummary.holdingsCount,
+    analyzedHoldingsCount: request.holdings.length,
+    totalValuation: request.portfolioSummary.totalValuation,
+    totalPnl: request.portfolioSummary.totalPnl,
+    totalPnlRate: request.portfolioSummary.totalPnlRate,
   });
 }
 
@@ -64,7 +43,15 @@ export async function generatePortfolioInsightController(
 
   if (!isValidPortfolioInsightRequest(req.body)) {
     res.status(400).json({
-      message: "holdings must be an array of portfolio holding data.",
+      message:
+        "portfolioSummary and holdings must match the portfolio insight request format.",
+    });
+    return;
+  }
+
+  if (isEmptyPortfolioInsightRequest(req.body)) {
+    res.status(400).json({
+      message: "Portfolio data is empty.",
     });
     return;
   }

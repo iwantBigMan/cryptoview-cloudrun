@@ -1,21 +1,24 @@
 export interface PortfolioInsightHoldingInput {
-  exchange: string;
   symbol: string;
+  market: string;
   quantity: number;
-  valuationKrw: number;
-  portfolioRatio?: number;
-  averagePrice?: number;
-  currentPrice?: number;
-  pnlKrw?: number;
-  pnlRate?: number;
-  riskTags?: string[];
+  averagePrice: number;
+  currentPrice: number;
+  valuation: number;
+  pnl: number;
+  pnlRate: number;
+}
+
+export interface PortfolioInsightSummaryInput {
+  baseCurrency: "KRW" | "USDT";
+  holdingsCount: number;
+  totalValuation: number;
+  totalPnl: number;
+  totalPnlRate: number;
 }
 
 export interface PortfolioInsightRequest {
-  baseCurrency?: string;
-  totalValuationKrw?: number;
-  totalPnlKrw?: number;
-  totalPnlRate?: number;
+  portfolioSummary: PortfolioInsightSummaryInput;
   holdings: PortfolioInsightHoldingInput[];
 }
 
